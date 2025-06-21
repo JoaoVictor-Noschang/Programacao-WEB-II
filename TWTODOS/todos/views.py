@@ -1,8 +1,9 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404, redirect
 
+from django.shortcuts import redirect
 from .models import Todo
+from .services import TodoService  # Importa o serviço
 
 class TodoListView(ListView):
     model = Todo
@@ -25,7 +26,13 @@ class TodoDeleteView(DeleteView):
 
 
 class TodoCompleteView(View):
+    todo_service = None  # Adicionamos o atributo esperado
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.todo_service is None:
+            self.todo_service = TodoService(Todo)  # Definimos o serviço padrão
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request, pk):
-        todo = get_object_or_404(Todo, pk=pk)
-        todo.mark_has_complete()
+        self.todo_service.mark_as_complete(pk)
         return redirect("todo_list")
